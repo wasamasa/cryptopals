@@ -1,7 +1,7 @@
 require 'webrick'
 require_relative 'util'
 
-KEY = random_word
+KEY = random_word.bytes
 DELAY = 0.005
 
 def unsafe_compare(string1, string2)

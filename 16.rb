@@ -48,7 +48,7 @@
 
 require_relative 'util'
 
-KEY = str(random_bytes(16))
+KEY = random_bytes(16)
 IV = random_bytes(16)
 
 # this CBC feature seems to be about error recovery/tolerance, if
@@ -59,11 +59,11 @@ def encode_cookie(userdata)
   prefix = 'comment1=cooking%20MCs;userdata='
   suffix = ';comment2=%20like%20a%20pound%20of%20bacon'
   input = prefix + userdata.tr(';=', '') + suffix
-  aes_cbc_encrypt(pkcs7pad(input.bytes, 16), IV, KEY)
+  aes_cbc_encrypt(pkcs7pad(input.bytes, 16), KEY, IV)
 end
 
 def decode_cookie(buffer)
-  input = str(pkcs7unpad(aes_cbc_decrypt(buffer, IV, KEY)))
+  input = str(pkcs7unpad(aes_cbc_decrypt(buffer, KEY, IV)))
   info("Decoded string: #{input}")
   output = input.split(';').map { |kv| kv.split('=') }.to_h
   info("Decoded data: #{output}")

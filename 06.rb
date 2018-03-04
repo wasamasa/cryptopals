@@ -88,8 +88,9 @@ best_key_sizes = key_sizes.sort_by { |d, _| d }.map { |_, k| k }.take(3)
 keys = []
 best_key_sizes.each do |key_size|
   key_bytes = []
-  blocks = transpose(input.each_slice(key_size).to_a)
-  blocks.each do |block|
+  blocks = input.each_slice(key_size).to_a
+  blocks[-1] = rightpad(blocks[-1], blocks[0].size, nil)
+  blocks.transpose.each do |block|
     best_score = 0
     best_key_byte = nil
     (0..255).each do |key_byte|

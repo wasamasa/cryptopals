@@ -82,16 +82,16 @@ INPUTS = [
 ].map { |input| b64decode(input) }
 
 INPUT = random_choice(INPUTS)
-KEY = str(random_bytes(16))
+KEY = random_bytes(16)
 
 def encrypt_credentials
   iv = random_bytes(16)
-  output = aes_cbc_encrypt(pkcs7pad(INPUT, 16), iv, KEY)
+  output = aes_cbc_encrypt(pkcs7pad(INPUT, 16), KEY, iv)
   [iv, output]
 end
 
 def check_credentials(iv, buffer)
-  output = aes_cbc_decrypt(buffer, iv, KEY)
+  output = aes_cbc_decrypt(buffer, KEY, iv)
   ignore_errors { pkcs7unpad(output) }
 end
 

@@ -60,7 +60,7 @@ require_relative 'util'
 
 PLAINTEXT = 'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon'.bytes
 SUFFIX = ';admin=true'.bytes
-KEY = random_word
+KEY = random_word.bytes
 MAC = sha1_mac(PLAINTEXT, KEY)
 
 def verify(buffer, mac)

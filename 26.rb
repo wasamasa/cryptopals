@@ -9,17 +9,17 @@
 require_relative 'util'
 
 NONCE = 42
-KEY = str(random_bytes(16))
+KEY = random_bytes(16)
 
 def encode_cookie(userdata)
   prefix = 'comment1=cooking%20MCs;userdata='
   suffix = ';comment2=%20like%20a%20pound%20of%20bacon'
   input = prefix + userdata.tr(';=', '') + suffix
-  aes_ctr_encrypt(input.bytes, NONCE, KEY)
+  aes_ctr_encrypt(input.bytes, KEY, NONCE)
 end
 
 def decode_cookie(buffer)
-  input = str(aes_ctr_decrypt(buffer, NONCE, KEY))
+  input = str(aes_ctr_decrypt(buffer, KEY, NONCE))
   info("decoded string: #{input}")
   output = input.split(';').map { |kv| kv.split('=') }.to_h
   info("decoded data: #{output}")

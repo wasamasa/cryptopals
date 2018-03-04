@@ -25,7 +25,7 @@ STOCK_SHA1 = Digest::SHA1.new
 
 assert(SHA1.hexdigest('test'.bytes) == STOCK_SHA1.hexdigest('test'))
 
-KEY = random_word
+KEY = random_word.bytes
 PLAINTEXT = b64decode('"WW91ciBndWVzcyBpcyBnb29kIGFzIG15IGd1ZXNz"')
 MAC = sha1_mac(PLAINTEXT, KEY)
 

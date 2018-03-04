@@ -106,7 +106,7 @@ ensure_pipe(S)
 # S->C
 #     Send "OK" if HMAC-SHA256(K, salt) validates
 
-assert(sha256_hmac([], '') ==
+assert(sha256_hmac([], []) ==
        'b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292c5ad')
 
 N = NIST_PRIME
@@ -116,12 +116,12 @@ def signup_client(email, password)
   salt = rand(1..1024)
   x = sha256_hexdigest("#{salt}#{password}".bytes).to_i(16)
   v = modexp(g, x, N)
-  send(S, "#{email} #{salt} #{v}")
+  snd(S, "#{email} #{salt} #{v}")
   info("signed up with #{email}")
 end
 
 def signup_server
-  _I, salt, v = recv(S).split(' ')
+  _I, salt, v = rcv(S).split(' ')
   salt = salt.to_i
   v = v.to_i
   info("signup from #{_I}")
@@ -133,32 +133,32 @@ def login_client(email, password)
   k = 3
   a = rand(1..1024)
   _A = modexp(g, a, N)
-  send(S, "#{email} #{_A}")
-  salt, _B = recv(C).split(' ')
+  snd(S, "#{email} #{_A}")
+  salt, _B = rcv(C).split(' ')
   _B = _B.to_i
   u = sha256_hexdigest("#{_A}#{_B}".bytes).to_i(16)
   x = sha256_hexdigest("#{salt}#{password}".bytes).to_i(16)
   _S = modexp(_B - k * modexp(g, x, N), a + u * x, N)
   _K = sha256_hexdigest(_S.to_s.bytes)
-  send(S, sha256_hmac(_K.bytes, salt.to_s))
-  assert(recv(C) == 'OK')
+  snd(S, sha256_hmac(_K.bytes, salt.to_s.bytes))
+  assert(rcv(C) == 'OK')
 end
 
 def login_server(credentials)
   g = 2
   k = 3
-  _I, _A = recv(S).split(' ')
+  _I, _A = rcv(S).split(' ')
   _A = _A.to_i
   salt, v = credentials[_I]
   b = rand(1..1024)
   _B = (k * v + modexp(g, b, N)) % N
-  send(C, "#{salt} #{_B}")
+  snd(C, "#{salt} #{_B}")
   u = sha256_hexdigest("#{_A}#{_B}".bytes).to_i(16)
   _S = modexp(_A * modexp(v, u, N), b, N)
   _K = sha256_hexdigest(_S.to_s.bytes)
-  hmac = recv(S)
-  ok = sha256_hmac(_K.bytes, salt.to_s) == hmac
-  send(C, ok ? 'OK' : 'FAIL')
+  hmac = rcv(S)
+  ok = sha256_hmac(_K.bytes, salt.to_s.bytes) == hmac
+  snd(C, ok ? 'OK' : 'FAIL')
 end
 
 if ROLE == 'C'

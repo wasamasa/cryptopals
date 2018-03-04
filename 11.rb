@@ -28,7 +28,7 @@
 require_relative 'util'
 
 def encryption_oracle(input)
-  key = str(random_bytes(16))
+  key = random_bytes(16)
   prefix = random_bytes(rand(5..10))
   suffix = random_bytes(rand(5..10))
   input = pkcs7pad(prefix + input + suffix, 16)
@@ -38,7 +38,7 @@ def encryption_oracle(input)
   else
     iv = random_bytes(16)
     info('Encrypting with CBC...')
-    aes_cbc_encrypt(input, iv, key)
+    aes_cbc_encrypt(input, key, iv)
   end
 end
 

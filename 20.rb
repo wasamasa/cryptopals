@@ -21,10 +21,10 @@
 require_relative 'util'
 
 NONCE = 0
-KEY = str(random_bytes(16))
+KEY = random_bytes(16)
 
 INPUTS = File.open('20.txt', &:readlines)
-             .map { |line| aes_ctr_encrypt(b64decode(line), NONCE, KEY) }
+             .map { |line| aes_ctr_encrypt(b64decode(line), KEY, NONCE) }
 
 MAX_INPUT = INPUTS.max_by(&:length)
 MIN_INPUT = INPUTS.min_by(&:length)
@@ -37,7 +37,7 @@ KEY_SIZE = MIN_INPUT.length
 INPUT = INPUTS.flat_map { |input| input.slice(0, KEY_SIZE) }
 
 key_bytes = []
-blocks = transpose(INPUT.each_slice(KEY_SIZE).to_a)
+blocks = INPUT.each_slice(KEY_SIZE).to_a.transpose
 blocks.each do |block|
   best_score = 0
   best_key_byte = nil

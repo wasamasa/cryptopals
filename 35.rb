@@ -47,43 +47,43 @@ ensure_pipe(M)
 if ROLE == 'A'
   p = 37
   g = 5
-  send(M, "#{p} #{g}")
-  assert(recv(A) == 'ACK')
+  snd(M, "#{p} #{g}")
+  assert(rcv(A) == 'ACK')
   info('received ack')
   a, _A = generate_dh_keys(p, g)
-  send(M, _A.to_s)
-  _B = recv(A).to_i
+  snd(M, _A.to_s)
+  _B = rcv(A).to_i
   s = modexp(_B, a, p)
   info("shared secret: #{s}")
   key = make_sha1_key(s)
   iv = random_bytes(16)
-  ciphertext = aes_cbc_encrypt(pkcs7pad(MESSAGE, 16), iv, key)
-  send(M, "#{b64encode(ciphertext)} #{b64encode(iv)}")
+  ciphertext = aes_cbc_encrypt(pkcs7pad(MESSAGE, 16), key, iv)
+  snd(M, "#{b64encode(ciphertext)} #{b64encode(iv)}")
   info("sent message: #{str(MESSAGE)}")
-  ciphertext, iv = recv(A).split(' ').map { |str| b64decode(str) }
-  message = pkcs7unpad(aes_cbc_decrypt(ciphertext, iv, key))
+  ciphertext, iv = rcv(A).split(' ').map { |str| b64decode(str) }
+  message = pkcs7unpad(aes_cbc_decrypt(ciphertext, key, iv))
   info("received message: #{str(message)}")
   assert(MESSAGE == message)
   info('roundtrip successful')
 elsif ROLE == 'B'
-  p, g = recv(B).split(' ').map(&:to_i)
-  send(M, 'ACK')
+  p, g = rcv(B).split(' ').map(&:to_i)
+  snd(M, 'ACK')
   info('sent ack')
   b, _B = generate_dh_keys(p, g)
-  _A = recv(B).to_i
-  send(M, _B.to_s)
+  _A = rcv(B).to_i
+  snd(M, _B.to_s)
   s = modexp(_A, b, p)
   info("shared secret: #{s}")
   key = make_sha1_key(s)
-  ciphertext, iv = recv(B).split(' ').map { |str| b64decode(str) }
-  message = pkcs7unpad(aes_cbc_decrypt(ciphertext, iv, key))
+  ciphertext, iv = rcv(B).split(' ').map { |str| b64decode(str) }
+  message = pkcs7unpad(aes_cbc_decrypt(ciphertext, key, iv))
   info("received message: #{str(message)}")
   iv = random_bytes(16)
-  ciphertext = aes_cbc_encrypt(pkcs7pad(message, 16), iv, key)
-  send(M, "#{b64encode(ciphertext)} #{b64encode(iv)}")
+  ciphertext = aes_cbc_encrypt(pkcs7pad(message, 16), key, iv)
+  snd(M, "#{b64encode(ciphertext)} #{b64encode(iv)}")
   info("resent message: #{str(message)}")
 else
-  msg = recv(M)
+  msg = rcv(M)
   p = msg.split(' ')[0].to_i
   case STRATEGY
   when '1'
@@ -95,34 +95,34 @@ else
   when 'P_1'
     g = p - 1
   end
-  send(B, "#{p} #{g}")
-  msg = recv(M)
-  send(A, msg)
-  _A = recv(M).to_i
-  send(B, _A.to_s)
-  _B = recv(M).to_i
-  send(A, _B.to_s)
-  msg = recv(M)
-  send(B, msg)
+  snd(B, "#{p} #{g}")
+  msg = rcv(M)
+  snd(A, msg)
+  _A = rcv(M).to_i
+  snd(B, _A.to_s)
+  _B = rcv(M).to_i
+  snd(A, _B.to_s)
+  msg = rcv(M)
+  snd(B, msg)
   info("variables: #{[p, g, _A, _B]}")
   ciphertext, iv = msg.split(' ').map { |str| b64decode(str) }
   if STRATEGY == 'P_1'
     begin
       key = make_sha1_key(1)
-      message = pkcs7unpad(aes_cbc_decrypt(ciphertext, iv, key))
+      message = pkcs7unpad(aes_cbc_decrypt(ciphertext, key, iv))
     rescue StandardError
       key = make_sha1_key(g)
-      message = pkcs7unpad(aes_cbc_decrypt(ciphertext, iv, key))
+      message = pkcs7unpad(aes_cbc_decrypt(ciphertext, key, iv))
     end
   else
     key = make_sha1_key(s)
-    message = pkcs7unpad(aes_cbc_decrypt(ciphertext, iv, key))
+    message = pkcs7unpad(aes_cbc_decrypt(ciphertext, key, iv))
   end
   info("intercepted message: #{str(message)}")
   # in the rare case A and B share the same secret, this makes sure
   # the conversation is terminated
-  msg = recv(M)
-  send(A, msg)
+  msg = rcv(M)
+  snd(A, msg)
 end
 
 # the reason this isn't terribly real-world is because in most cases A

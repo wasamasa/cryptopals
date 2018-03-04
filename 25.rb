@@ -26,20 +26,20 @@ require_relative 'util'
 
 # same procedure as in challenge #7
 PLAINTEXT = aes_ecb_decrypt(b64decode(File.open('25.txt', &:read)),
-                            'YELLOW SUBMARINE')
+                            'YELLOW SUBMARINE'.bytes)
 NONCE = 42
-KEY = str(random_bytes(16))
-CIPHERTEXT = aes_ctr_encrypt(PLAINTEXT, NONCE, KEY)
+KEY = random_bytes(16)
+CIPHERTEXT = aes_ctr_encrypt(PLAINTEXT, KEY, NONCE)
 
 def edit(ciphertext, nonce, key, offset, newtext)
   assert(offset < ciphertext.size)
   assert(offset + newtext.size <= ciphertext.size)
   block_skip = offset / 16
   block_count = (newtext.size / 16) + 1
-  hunk = aes_ctr_decrypt(ciphertext, nonce, key,
+  hunk = aes_ctr_decrypt(ciphertext, key, nonce,
                          block_skip, block_count, block_skip)
   newtext.size.times { |i| hunk[offset % 16 + i] = newtext[i] }
-  patch = aes_ctr_encrypt(hunk, nonce, key, 0, block_count, block_skip)
+  patch = aes_ctr_encrypt(hunk, key, nonce, 0, block_count, block_skip)
   patched = ciphertext.clone
   patch.size.times { |i| patched[block_skip * 16 + i] = patch[i] }
   patched
@@ -50,12 +50,12 @@ def api_edit(ciphertext, offset, newtext)
 end
 
 plaintext = 'mississippi bank01234567890'.bytes
-ciphertext = aes_ctr_encrypt(plaintext, NONCE, KEY)
+ciphertext = aes_ctr_encrypt(plaintext, KEY, NONCE)
 offset = 16
 newtext = '*'.bytes
 new_ciphertext = edit(ciphertext, NONCE, KEY, offset, newtext)
 editedtext = 'mississippi bank*1234567890'.bytes
-assert(aes_ctr_decrypt(new_ciphertext, NONCE, KEY) == editedtext)
+assert(aes_ctr_decrypt(new_ciphertext, KEY, NONCE) == editedtext)
 
 # the idea here is that if you edit a byte of the ciphertext and the
 # result is the same, you've guessed that byte of the plaintext

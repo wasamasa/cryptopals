@@ -86,7 +86,7 @@ def pkcs1_v15_pad(buffer, modulus_size, garbage = [])
 end
 
 def bad_pkcs1_v15_unpad(buffer, modulus_size)
-  buffer = leftpad(buffer, modulus_size / 8)
+  buffer = leftpad(buffer, modulus_size / 8, 0)
   assert(buffer[0..1] == [0x00, 0x01])
   assert(buffer[2] == 0xff)
   rest = buffer.drop(2).drop_while { |b| b == 0xff }
@@ -116,5 +116,5 @@ garbage = Array.new(MAX_GARBAGE_SIZE, 0x00)
 assert(rsa_verify(MESSAGE, rsa_sign(MESSAGE, PRIVATE, garbage), PUBLIC))
 
 message_block = pkcs1_v15_pad(MESSAGE, MODULUS_SIZE, garbage)
-bad_signature = icbrt(buffer_to_number(message_block), true)
+bad_signature = icbrt(buffer_to_number(message_block))
 assert(rsa_verify(MESSAGE, bad_signature, PUBLIC))

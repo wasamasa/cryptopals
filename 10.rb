@@ -29,10 +29,10 @@ require_relative 'util'
 
 input = b64decode(File.open('10.txt', &:read))
 iv = Array.new(16, 0)
-key = 'YELLOW SUBMARINE'
+key = 'YELLOW SUBMARINE'.bytes
 
 # sanity check
-assert(input == aes_cbc_decrypt(aes_cbc_encrypt(input, iv, key), iv, key))
+assert(input == aes_cbc_decrypt(aes_cbc_encrypt(input, key, iv), key, iv))
 
-output = aes_cbc_decrypt(input, iv, 'YELLOW SUBMARINE')
+output = aes_cbc_decrypt(input, 'YELLOW SUBMARINE'.bytes, iv)
 puts str(output)

@@ -78,7 +78,7 @@
 require_relative 'util'
 
 NONCE = 0
-KEY = str(random_bytes(16))
+KEY = random_bytes(16)
 
 INPUTS = [
   'SSBoYXZlIG1ldCB0aGVtIGF0IGNsb3NlIG9mIGRheQ==',
@@ -121,7 +121,7 @@ INPUTS = [
   'SGUsIHRvbywgaGFzIGJlZW4gY2hhbmdlZCBpbiBoaXMgdHVybiw=',
   'VHJhbnNmb3JtZWQgdXR0ZXJseTo=',
   'QSB0ZXJyaWJsZSBiZWF1dHkgaXMgYm9ybi4='
-].map { |input| aes_ctr_encrypt(b64decode(input), NONCE, KEY) }
+].map { |input| aes_ctr_encrypt(b64decode(input), KEY, NONCE) }
 
 MAX_INPUT = INPUTS.max_by(&:length)
 MIN_INPUT = INPUTS.min_by(&:length)

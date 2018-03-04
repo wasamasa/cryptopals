@@ -83,12 +83,12 @@ def pkcs1_v15_pad(buffer, modulus_size)
   suffix = [0x00]
   padding_size = modulus_size / 8 - prefix.size - suffix.size - buffer.size
   raise 'message too long' if padding_size < 1
-  padding = (0...padding_size).map { rand(1..255) }
+  padding = random_bytes(padding_size, (1..255))
   prefix + padding + suffix + buffer
 end
 
 def pkcs1_v15_unpad(buffer, modulus_size)
-  buffer = leftpad(buffer, modulus_size / 8)
+  buffer = leftpad(buffer, modulus_size / 8, 0)
   separator_index = buffer.drop(2).index(0)
   assert(separator_index && separator_index + 1 < buffer.size)
   buffer[(separator_index + 3)..-1]

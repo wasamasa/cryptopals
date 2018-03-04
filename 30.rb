@@ -19,7 +19,7 @@ assert(MD4.hexdigest('test'.bytes) == OpenSSL::Digest::MD4.hexdigest('test'))
 
 PLAINTEXT = 'comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon'.bytes
 SUFFIX = ';admin=true'.bytes
-KEY = random_word
+KEY = random_word.bytes
 MAC = md4_mac(PLAINTEXT, KEY)
 
 def verify(buffer, mac)

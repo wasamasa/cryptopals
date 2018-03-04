@@ -42,9 +42,9 @@ require 'benchmark'
 require 'net/http'
 require_relative 'util'
 
-assert(sha1_hmac([], '') == 'fbdb1d1b18aa6c08324b7d64b71fb76370690e1d')
-assert(sha1_hmac('The quick brown fox jumps over the lazy dog'.bytes, 'key') ==
-       'de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9')
+assert(sha1_hmac([], []) == 'fbdb1d1b18aa6c08324b7d64b71fb76370690e1d')
+assert(sha1_hmac('The quick brown fox jumps over the lazy dog'.bytes,
+                 'key'.bytes) == 'de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9')
 
 def http_request(file, hmac)
   uri = URI("http://localhost:9000/test?file=#{file}&signature=#{hmac}")

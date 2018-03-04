@@ -49,20 +49,11 @@
 
 require_relative 'util'
 
-KEY = str(random_bytes(16))
-
-def decode_query_string(input)
-  input.split('&').map { |kv| kv.split('=') }.to_h
-end
-
-def encode_query_string(hash)
-  hash.map { |k, v| "#{k}=#{v}" }.join('&')
-end
+KEY = random_bytes(16)
 
 def profile_for(email)
-  profile = { 'email' => email.tr('=&', ''),
-              'uid' => 10,
-              'role' => 'user' }
+  email = email.tr('=&', '')
+  profile = { email: email, uid: 10, role: 'user' }
   encode_query_string(profile)
 end
 

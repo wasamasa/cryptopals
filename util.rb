@@ -140,18 +140,11 @@ def hamming(buf1, buf2)
   result
 end
 
-def transpose(arrays)
-  arrays[0].zip(*arrays.drop(1))
-end
-
 def aes_ecb_internal(mode, buffer, key)
+  assert((buffer.size % 16).zero?)
   cipher = OpenSSL::Cipher.new('AES-128-ECB')
-  if mode == :encrypt
-    cipher.encrypt
-  else
-    cipher.decrypt
-  end
-  cipher.key = key
+  cipher.send(mode)
+  cipher.key = str(key)
   cipher.padding = 0 # decryption will otherwise fail
   result = cipher.update(str(buffer)) + cipher.final
   result.bytes
@@ -165,7 +158,16 @@ def aes_ecb_encrypt(buffer, key)
   aes_ecb_internal(:encrypt, buffer, key)
 end
 
-def aes_cbc_decrypt(buffer, iv, key)
+def decode_query_string(input)
+  input.split('&').map { |kv| kv.split('=') }.to_h
+end
+
+def encode_query_string(hash)
+  hash.map { |k, v| "#{k}=#{v}" }.join('&')
+end
+
+def aes_cbc_decrypt(buffer, key, iv)
+  assert((buffer.size % 16).zero?)
   blocks = buffer.each_slice(16).to_a
   last = iv
   result = []
@@ -177,7 +179,8 @@ def aes_cbc_decrypt(buffer, iv, key)
   result
 end
 
-def aes_cbc_encrypt(buffer, iv, key)
+def aes_cbc_encrypt(buffer, key, iv)
+  assert((buffer.size % 16).zero?)
   blocks = buffer.each_slice(16).to_a
   last = iv
   result = []
@@ -213,8 +216,8 @@ def pkcs7unpad(buffer)
   buffer[0...-size]
 end
 
-def random_bytes(size)
-  (0...size).map { rand(256) }
+def random_bytes(size, limit = 256)
+  (0...size).map { rand(limit) }
 end
 
 def random_choice(items)
@@ -226,7 +229,7 @@ def long_bytes_le(x)
 end
 
 # skip, offset and count are measured in 16-byte blocks
-def aes_ctr_internal(buffer, nonce, key, skip = 0, count = nil, offset = 0)
+def aes_ctr_internal(buffer, key, nonce, skip = 0, count = nil, offset = 0)
   nonce = long_bytes_le(nonce)
   blocks = buffer.each_slice(16).drop(skip).to_a
   blocks = blocks.take(count) if count
@@ -266,18 +269,17 @@ def pb(buffer)
 end
 
 def hmac(buffer, key, block_size)
-  keybuf = key.bytes
-  keybuf = hexdecode(yield keybuf) if key.size > block_size
-  keybuf += Array.new(block_size - key.size, 0) if key.size < block_size
-  opad = xor_buffers(keybuf, Array.new(block_size, 0x5c))
-  ipad = xor_buffers(keybuf, Array.new(block_size, 0x36))
+  key = hexdecode(yield key) if key.size > block_size
+  key += Array.new(block_size - key.size, 0) if key.size < block_size
+  opad = xor_buffers(key, Array.new(block_size, 0x5c))
+  ipad = xor_buffers(key, Array.new(block_size, 0x36))
   yield(opad + hexdecode(yield ipad + buffer))
 end
 
 require_relative 'sha1'
 
 def sha1_mac(buffer, key)
-  SHA1.hexdigest(key.bytes + buffer)
+  SHA1.hexdigest(key + buffer)
 end
 
 def sha1_hmac(buffer, key)
@@ -286,13 +288,13 @@ def sha1_hmac(buffer, key)
 end
 
 def make_sha1_key(int, width = 16)
-  SHA1.hexdigest(int.to_s.bytes).slice(0, width)
+  SHA1.hexdigest(int.to_s.bytes).slice(0, width).bytes
 end
 
 require_relative 'md4'
 
 def md4_mac(buffer, key)
-  MD4.hexdigest(key.bytes + buffer)
+  MD4.hexdigest(key + buffer)
 end
 
 WORDS = File.open('/usr/share/dict/words', &:readlines).map(&:chomp)
@@ -318,11 +320,11 @@ def ensure_pipe(name)
   ignore_errors { `mkfifo #{name} 2>/dev/null` }
 end
 
-def send(path, msg)
+def snd(path, msg)
   File.open(path, 'w') { |f| f.puts msg }
 end
 
-def recv(path)
+def rcv(path)
   File.open(path, 'r') { |f| f.gets.chomp }
 end
 
@@ -367,12 +369,8 @@ def number_to_buffer(number)
   hexdecode(hex)
 end
 
-def icbrt(x, inexact = false)
-  if inexact
-    (0..x).bsearch { |r| r**3 >= x }
-  else
-    (0..x).bsearch { |r| r**3 <=> x }
-  end
+def icbrt(x)
+  (0..x).bsearch { |r| r**3 >= x }
 end
 
 def rsa_encrypt(buffer, public_key)
@@ -413,8 +411,8 @@ def dsa_verify(buffer, signature, params, y)
   assert(v == r)
 end
 
-def leftpad(buffer, size, byte = 0)
+def leftpad(buffer, size, item)
   return buffer if buffer.size >= size
   padding_size = size - buffer.size
-  Array.new(padding_size, byte) + buffer
+  Array.new(padding_size, item) + buffer
 end
