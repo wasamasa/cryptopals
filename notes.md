@@ -211,6 +211,16 @@ was implementing a more efficient `edit` function that synthesized the
 necessary part of the keystream, XORed it with the new plaintext and
 returned the ciphertext with the result patched in.
 
+edit: I found a way more efficient way. The `edit` API call gives you
+a way to generate an attacker-controlled ciphertext using the same
+nonce and key.  Encryption combines the plaintext with a keystream
+that is the same for both ciphertexts.  Therefore, XORing both
+ciphertexts will cancel the keystreams out and give you the
+combination of the unknown plaintext and the known one.  XOR the
+result with the known plaintext and you've recovered the unknown one.
+The lesson from this one is probably that you should use a new nonce
+when re-encrypting.
+
 # 26 CTR bitflipping
 
 Same approach as with challenge #16 except that bitflipping will
