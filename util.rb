@@ -82,13 +82,13 @@ def xor_buffers(a, b)
 end
 
 def xor_buffer_with_byte(buffer, byte)
-  result = Array.new(buffer.length)
+  result = Array.new(buffer.size)
   result.each_index { |i| result[i] = buffer[i] ^ byte }
   result
 end
 
 def xor_buffer_with_bytes(buffer, bytes)
-  result = Array.new(buffer.length)
+  result = Array.new(buffer.size)
   result.each_index do |i|
     byte = bytes[i % bytes.length]
     result[i] = buffer[i] ^ byte
@@ -203,7 +203,7 @@ end
 def pkcs7pad(buffer, block_size)
   raise 'invalid block size' unless block_size < 256
   # taken from https://tools.ietf.org/html/rfc2315#section-10.3
-  padding_length = block_size - buffer.length % block_size
+  padding_length = block_size - buffer.size % block_size
   padding = Array.new(padding_length, padding_length)
   buffer + padding
 end

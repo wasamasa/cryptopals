@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ## DSA key recovery from nonce
 
 # Step 1: Relocate so that you are out of easy travel distance of us.
