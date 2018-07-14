@@ -416,3 +416,35 @@ def leftpad(buffer, size, item)
   padding_size = size - buffer.size
   Array.new(padding_size, item) + buffer
 end
+
+def rightpad(buffer, size, item)
+  return buffer if buffer.size >= size
+  padding_size = size - buffer.size
+  buffer + Array.new(padding_size, item)
+end
+
+def cbc_mac(buffer, key, iv)
+  hexencode(aes_cbc_encrypt(buffer, key, iv).slice(-16, 16))
+end
+
+def merkle_damgard_pad(buffer, block_size, input_size = nil)
+  input_size ||= buffer.size
+  size_block = long_bytes_le(input_size)
+  padding_size = block_size - ((input_size + size_block.size) % block_size) - 1
+  buffer + [1] + Array.new(padding_size, 0) + size_block
+end
+
+def merkle_damgard(buffer, iv, block_size)
+  merkle_damgard_pad(buffer, block_size).each_slice(block_size) do |block|
+    iv = yield(block, iv)
+  end
+  iv
+end
+
+def aes_ecb_compress(block, iv)
+  aes_ecb_encrypt(block, rightpad(iv, 16, 0)).slice(0, iv.size)
+end
+
+def aes_hash(message, iv)
+  merkle_damgard(message, iv, 16) { |block, iv| aes_ecb_compress(block, iv) }
+end

@@ -1,0 +1,44 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <title>Cryptopals #50</title>
+    <script type="text/javascript" src="https://cdn.rawgit.com/ricmoo/aes-js/e27b99df/index.js"></script>
+    <script type="text/javascript">
+     function cbcmac(buffer, key, iv) {
+       var cipher = new aesjs.ModeOfOperation.cbc(key, iv);
+       var ciphertext = cipher.encrypt(buffer);
+       var mac = ciphertext.slice(-16);
+       return aesjs.utils.hex.fromBytes(mac);
+     }
+
+     document.addEventListener('DOMContentLoaded', function(e) {
+       var key = aesjs.utils.utf8.toBytes('YELLOW SUBMARINE');
+       var iv = new Uint8Array(16);
+       var expectedMac = '296b8d7cb78a243dda4d0a61d33bbdd1';
+
+       var filepicker = document.getElementById('filepicker');
+       filepicker.addEventListener('change', function(e) {
+         var files = e.target.files;
+         if (files.length > 0) {
+           var file = e.target.files[0];
+           var reader = new FileReader();
+           reader.onload = function(e) {
+             var buffer = new Uint8Array(e.target.result);
+             var padded = aesjs.padding.pkcs7.pad(buffer);
+             var mac = cbcmac(padded, key, iv);
+             if (mac == expectedMac) {
+               var code = aesjs.utils.utf8.fromBytes(buffer);
+               document.write('<script>' + code + '<\/script>');
+               document.close();
+             }
+           };
+           reader.readAsArrayBuffer(file);
+         }
+       });
+     });
+    </script>
+  </head>
+  <body>
+    <input id="filepicker" type="file">
+  </body>
+</html>

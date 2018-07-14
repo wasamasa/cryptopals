@@ -417,3 +417,84 @@ Same as #47, but you'll need to flesh out your code to actually work
 with multiple intervals.  The loop consists of step 3 followed by
 either step 2b or 2c, depending on whether step 3 gave you multiple
 intervals or not.
+
+# 49 CBC-MAC Message Forgery
+
+For part 1 you'll want to think about how a manipulation to the first
+block would give your account a million spacebucks.  If you xor the
+relevant bytes into that message, you'll have to xor the same bytes in
+the IV for decryption to work.
+
+Part 2 requires two messages, one captured from the sender of the
+million spacebucks, one captured from an account you control.  Xor the
+MAC of the first message into the first block of the second message,
+pad the first message and add the second message and its IV.  The
+resulting message should be valid, but may not be decoded correctly,
+so retry with a different second message.
+
+# 50 Hashing with CBC-MAC
+
+It took me rather long to realize that you need the key so that you
+can encrypt and decrypt blocks as needed to pull off the attack.  The
+idea is that you start encrypting blocks resembling the message to be
+forged (plus a line comment starter to ignore the rest of the
+message), then append two more blocks, one randomly chosen and one
+resembling the MAC that should look like a padded block after
+decrypting.  To keep the amount of attempts low, go for the most
+likely PKCS#7 padding, a single byte.
+
+I completed the extra credit exercise as well.  It uses a form for
+uploading a local file and the `FileReader` API to process it.
+Verification is done with the [aesjs](https://github.com/ricmoo/aes-js) library.  The easiest way of
+inserting something into the DOM is `document.write` which replaces
+the whole document and runs it, so you'll see a Wu-Tang Clan alert
+after uploading both the original and the forged script.
+
+# 51 Compression Ratio Side-Channel Attacks
+
+[This paper](https://www.iacr.org/cryptodb/archive/2002/FSE/3091/3091.pdf) looks relevant and is what enables the [CRIME](https://en.wikipedia.org/wiki/CRIME)
+and [BREACH](https://en.wikipedia.org/wiki/BREACH) attacks.  For the first CTR results in as many
+encrypted as compressed bytes, so you can write an algorithm that
+tries a concatenation of the secret prefix, the bytes guessed so far
+and the guessed byte, the one yielding the smallest result is likely
+to be the correct one.  Adding a random suffix improves the chances
+considerably.  The algorithm terminates once there is no correct
+looking candidate, however that fails early sometimes.  There's two
+possible solutions here, backtracking to guessing the previous byte
+again or retrying the whole guess until there's a correct looking
+one.  I obviously went for the latter because I implemented the same
+strategy in #32.
+
+With CTR swapped out for CBC things get harder because there's no
+longer an exact correlation between plaintext and ciphertext size.
+Thanks to PKCS#7 padding the size of the ciphertext will increase by a
+block once the plaintext reaches a multiple of the block size.
+Similarly, the size of the ciphertext will decrease by a block once
+the plaintext becomes smaller than a multiple of the block size.
+Another fact helping us is that random bytes are (close to)
+uncompressable by definition, so they'll come in useful as glue to
+achieve padding to the nearest block size.  The easiest way is to wrap
+the earlier logic into a loop retrying with increasingly bigger random
+blocks until reaching the block size.
+
+# 52 Iterated Hash Function Multicollisions
+
+[Relevant paper](http://math.boisestate.edu/~liljanab/Math509Spring10/JouxAttackSHA-1.pdf) explaining the idea in more detail.  Note that if
+you use AES-128 for your weak hash function you first pad the IV to
+the full key's length, then truncate the output to the IV size.
+Another important detail is that you don't employ your homebrew
+hashing functions to find collision blocks (which works on an
+arbitrary number of blocks and appends a padding block), but the
+compression function (which works on a single block).  Implement the
+strategy of generating chained collision pairs, then create the
+product of all pairs and concatenate the combinations into messages.
+All these messages hash to the same value, even after padding (as they
+share the same intermediate states and lengths).
+
+If you're wondering why generating tons of messages and randomly
+trying until you find a collision for an unrelated hashing function
+works, it's the [birthday attack](https://en.wikipedia.org/wiki/Birthday_attack) at work.  Basically, having
+`2**(n/2)` colliding candidates (with n being the state size of the
+stronger hash function in bits) makes it very likely that one pair
+collides.  It's only a matter of chance, hence why you're told to just
+generate more candidates in case you're unlucky.
