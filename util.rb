@@ -99,7 +99,7 @@ end
 def frequencies(string)
   result = Hash.new { |h, k| h[k] = 0 }
   total = string.length
-  string.chars.each { |char| result[char] += 1 }
+  string.each_char { |char| result[char] += 1 }
   result.each { |k, v| result[k] = v.to_f / total }
   result
 end
@@ -337,21 +337,41 @@ def sha256_hmac(buffer, key)
   hmac(buffer, key, block_size) { |bytes| sha256_hexdigest(bytes) }
 end
 
-def invmod(a, n)
+def egcd(a, b)
+  x0, x1, y0, y1 = 0, 1, 1, 0
+  until a.zero?
+    q, b, a = b / a, a, b % a
+    y0, y1 = y1, y0 - q * y1
+    x0, x1 = x1, x0 - q * x1
+    p [q, b, a, x0, x1, y0, y1]
+  end
+  [b, x0, y0]
+end
+
+def invmod_fast(a, n)
   OpenSSL::BN.new(a).mod_inverse(OpenSSL::BN.new(n)).to_i
+end
+
+def invmod(a, n)
+  g, x, = egcd(a, n)
+  return x % n if g == 1
+  raise("couldn't calculate modular inverse")
 end
 
 def generate_prime(bits = 128)
   OpenSSL::BN.generate_prime(bits).to_i
 end
 
-def lcm(a, b)
-  (a * b) / a.gcd(b)
+def totient(factors)
+  distinct = Set.new(factors).to_a
+  result = factors.reduce(1, &:*)
+  distinct.each { |p| result *= 1 - Rational(1, p) }
+  result.to_i
 end
 
 def make_rsa_keys(p, q, e = 3)
   n = p * q
-  et = (p - 1) * (q - 1)
+  et = totient([p, q])
   assert(e.gcd(et) == 1)
   d = invmod(e, et)
   public_key = [e, n]

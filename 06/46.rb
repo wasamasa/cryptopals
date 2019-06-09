@@ -1,7 +1,6 @@
 require_relative '../util'
 # we'll want precise math as explained on
 # https://secgroup.dais.unive.it/wp-content/uploads/2012/11/Practical-Padding-Oracle-Attacks-on-RSA.html
-require 'mathn'
 
 P = generate_prime(512)
 Q = generate_prime(512)
@@ -40,9 +39,9 @@ loop do
   report_progress(sanitize(str(number_to_buffer(upper.to_i))))
   c = (modexp(2, E, N) * c) % N
   if parity_oracle(c)
-    upper = (upper + lower) / 2
+    upper = Rational(upper + lower, 2)
   else
-    lower = (upper + lower) / 2
+    lower = Rational(upper + lower, 2)
   end
   break if (upper - lower) < EPSILON
   sleep(DELAY)
